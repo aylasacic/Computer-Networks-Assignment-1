@@ -237,14 +237,6 @@ void handle_port_command(char *buffer, int client_fd) {
 }
 
 
-void handle_quit_command(int client_fd) {
-    char response[] = "221 Service closing control connection.\n";
-    send(client_fd, response, strlen(response), 0);
-    close(client_fd);
-    printf("Connection closed with client fd = %d\n", client_fd);
-    FD_CLR(client_fd, &all_sockets);
-}
-
 int main() {
     // Read user credentials
     read_user_credentials();
