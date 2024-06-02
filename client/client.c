@@ -9,7 +9,7 @@
 #include <errno.h>
 #include <time.h>
 
-#define PORT 4444
+#define PORT 4440
 
 void log_error(const char *message, int errnum) {
     fprintf(stderr, "%s: %s\n", message, strerror(errnum));
@@ -18,36 +18,35 @@ void log_error(const char *message, int errnum) {
 int isAuthenticated = 0;
 
 long int findFileSize(const char *fileName) {
-    FILE *file = fopen(fileName, "rb"); // Open the file in binary mode
+    FILE *file = fopen(fileName, "rb"); 
     if (file == NULL) {
-        printf("Could not open file %s\n", fileName);
+        printf("Could not open file %s\r\n", fileName);
         return -1;
     }
     
-    fseek(file, 0, SEEK_END); // Move the file pointer to the end of the file
-    long int size = ftell(file); // Get the current position of the file pointer (file size)
-    fclose(file); // Close the file
+    fseek(file, 0, SEEK_END);
+    long int size = ftell(file);
+    fclose(file);
     
     return size;
 }
 
-
 void print_intro() {
-    printf("%s", "Hello!! Please Authenticate to run server commands \n");
-    printf("%s", "1. Type \"USER\" followed by a space and your username \n");
-    printf("%s", "2. Type \"PASS\" followed by a space and your password \n\n");
+    printf("%s", "Hello!! Please Authenticate to run server commands \r\n");
+    printf("%s", "1. Type \"USER\" followed by a space and your username \r\n");
+    printf("%s", "2. Type \"PASS\" followed by a space and your password \r\n\n");
 
-    printf("%s", "\"QUIT\" to close connection at any moment \n");
-    printf("%s", "Once Authenticated \n");
+    printf("%s", "\"QUIT\" to close connection at any moment \r\n");
+    printf("%s", "Once Authenticated \r\n");
     printf("%s", "This is the list of commands : \n");
-    printf("%s", "\"STOR\" + space + filename | to send a file to the server \n");
-    printf("%s", "\"RETR\" + space + filename | to download a file from the server \n");
-    printf("%s", "\"LIST\" | to list all the files under the current server directory \n");
-    printf("%s", "\"CWD\" + space + directory | to change the current server directory \n");
-    printf("%s", "\"PWD\" to display the current server directory \n");
-    printf("%s", "Add \"!\" before the last three commands to apply them locally\n");
+    printf("%s", "\"STOR\" + space + filename | to send a file to the server \r\n");
+    printf("%s", "\"RETR\" + space + filename | to download a file from the server \r\n");
+    printf("%s", "\"LIST\" | to list all the files under the current server directory \r\n");
+    printf("%s", "\"CWD\" + space + directory | to change the current server directory \r\n");
+    printf("%s", "\"PWD\" to display the current server directory \r\n");
+    printf("%s", "Add \"!\" before the last three commands to apply them locally\r\n");
 
-    printf("%s", "220 Service ready for new user.\n");
+    printf("%s", "220 Service ready for new user.\r\n");
 }
     
 
@@ -58,7 +57,7 @@ int main(){
 
     //check for fail error
     if (network_socket < 0) {
-        printf("%s", "socket creation failed..\n");
+        printf("%s", "socket creation failed...\r\n");
         exit(EXIT_FAILURE);
     }
 
@@ -80,7 +79,7 @@ int main(){
         exit(EXIT_FAILURE);
     }
 
-    printf("Connected to server. \n");
+    printf("Connected to server. \r\n");
 
     char buffer[256];
 
@@ -99,7 +98,7 @@ int main(){
             int message = recv(network_socket, buffer, sizeof(buffer), 0);
 
             if (message <= 0) {
-                printf("Server has shutdown\n");
+                printf("Server has shutdown\r\n");
                 close(network_socket);
                 return 0;
             }
@@ -117,7 +116,7 @@ int main(){
             int message = recv(network_socket, buffer, sizeof(buffer), 0);
 
             if (message <= 0) {
-                printf("Server has shutdown\n");
+                printf("Server has shutdown\r\n");
                 close(network_socket);
                 return 0;
             }
@@ -129,9 +128,9 @@ int main(){
 			send(network_socket, buffer, sizeof(buffer), 0);
 			bzero(buffer, sizeof(buffer));
 
-			int rec_bytes = recv(network_socket, buffer, sizeof(buffer), 0);
-			if (rec_bytes<=0){
-				printf("Server has shutdown\n");
+			int rec = recv(network_socket, buffer, sizeof(buffer), 0);
+			if (rec <= 0){
+				printf("Server has shutdown\r\n");
 				return 0;
 			}
 			printf("%s\n", buffer);
@@ -144,30 +143,30 @@ int main(){
 			send(network_socket, buffer, sizeof(buffer), 0);
 			bzero(buffer, sizeof(buffer));
 
-			int rec_bytes = recv(network_socket, buffer, sizeof(buffer), 0);
-			if (rec_bytes<=0){
-				printf("Server has shutdown\n");
+			int rec = recv(network_socket, buffer, sizeof(buffer), 0);
+			if (rec <= 0){
+				printf("Server has shutdown\r\n");
 				return 0;
 			}
-			printf("%s\n", buffer);
+			printf("%s \r\n", buffer);
 		} else if(strncmp(buffer, "!PWD", 4)==0){
 
 			char pwd[1024];
 			getcwd(pwd, sizeof(pwd));
 
-			printf("%s\n", pwd);
+			printf("%s \r\n", pwd);
 
 		} else if (strncmp(buffer, "CWD", 3)==0){
 
 			send(network_socket, buffer, sizeof(buffer), 0);
 			bzero(buffer, sizeof(buffer));
 
-			int rec_bytes = recv(network_socket, buffer, sizeof(buffer), 0);
-			if (rec_bytes<=0){
-				printf("Server has shutdown\n");
+			int rec = recv(network_socket, buffer, sizeof(buffer), 0);
+			if (rec <= 0){
+				printf("Server has shutdown...\r\n");
 				return 0;
 			}
-			printf("%s\n", buffer);
+			printf("%s \r\n", buffer);
 		} else if (strncmp(buffer, "!LIST", 5) == 0) {
 			/* open current directory for user (on client) */
 			DIR *directory;
@@ -176,17 +175,19 @@ int main(){
 
 
 			/*
-			if directory is good,
-			print out the content
+				if directory is good,
+				print out the content
 			*/
 			if (directory) {
+				printf("\r\n");
 				while ((dir = readdir(directory)) != NULL) {
 					/* skip directories "." and ".." */
 					if (strcmp(dir -> d_name, ".") == 0 || strcmp(dir->d_name, "..") == 0) {
 						continue;
 					}
-					printf("%s\n", dir->d_name);
+					printf("%s\r\n", dir->d_name);
 				}
+				printf("\r\n");
 				closedir(directory);
 			} else {
 				printf("!LIST failed");
@@ -199,7 +200,7 @@ int main(){
 				if (chdir(argument) == 0) {
 			    		printf("250 Directory successfully changed.\r\n");
 				} else {
-			    		printf("550 Failed to change directory.\r\n");
+			    		printf("550 No such file or directory.\r\n");
 				}
 			} else {
 				printf("501 Syntax error in parameters or arguments.\r\n");
@@ -214,7 +215,7 @@ int main(){
 				
 			*/
 			if (!isAuthenticated) {
-				printf("530 Not logged in!\n");
+				printf("530 Not logged in.\r\n");
 				continue;
 		    	}
 		    	
@@ -226,7 +227,7 @@ int main(){
 				filename = strtok(NULL, " ");
 
 				if (filename == NULL) {
-				    printf("Please provide a file name!\n");
+				    printf("451 Requested action aborted. Local error in processing.\r\n");
 				    continue;
 				}
 			}
@@ -240,7 +241,7 @@ int main(){
 			int message = recv(network_socket, &channel, sizeof(channel), 0);
 
 			if (message <= 0){
-				printf("%s", "Server has shutdown\n");
+				printf("%s", "Server has shutdown...\r\n");
 				return 0;
 			}
 
@@ -296,7 +297,7 @@ int main(){
 			if (sscanf(client_ip, "%d.%d.%d.%d", &h1, &h2, &h3, &h4) == 4) {
 				snprintf(port_request, sizeof(port_request), "PORT %d,%d,%d,%d,%d,%d", h1, h2, h3, h4, p1, p2);
 			} else {
-				fprintf(stderr, "Invalid IP address format\n");
+				fprintf(stderr, "Invalid IP address format.\r\n");
 				return 1;
 			}
 
@@ -378,7 +379,7 @@ int main(){
 			
 			
 			if ((strncmp(response, "200", 3)) != 0) {
-				printf("PORT response failed...\n");
+				printf("PORT response failed...\r\n");
 				continue;
 			}
 			
@@ -396,12 +397,65 @@ int main(){
 			}
 
 			
-			if(strncmp(buffer, "STOR", 4)==0){
-				//TBD				
-			
-			}
+			if (strncmp(buffer, "STOR", 4) == 0) {
+				char receiver[1024];
+				strcpy(receiver, buffer);
+				char* filename = strchr(receiver, ' ');
+				if (filename != NULL) {
+				 	/* 
+				 		extract the file name from the receiver buffer 
+				 		not sure why just using buffer does not work 
+				 		
+				 	*/
+					filename = strtok(filename + 1, " ");
+				}
 
-			if(strncmp(buffer, "RETR", 4)==0){
+				long int file_size = findFileSize(filename);
+				
+				if (file_size == -1) { 
+					printf("550 No such file or directory.\r\n"); 
+					continue;
+				}
+
+				send(network_socket, buffer, strlen(buffer), 0);
+
+				char response[1024];
+				bzero(response, sizeof(response)); // clear buffer just for error mitigation
+				recv(data_socket, response, sizeof(response), 0);
+				printf("%s \r\n", response);
+
+				/* send file back to client */
+				if (file_size != -1) {
+					/* open file and read it into temporary file */
+					FILE* file = fopen(filename, "rb");
+					char* file_data = malloc(file_size);
+					fread(file_data, 1, file_size, file);
+
+					/* send it in byte size chunks */
+					int sent = 0;
+
+					while (sent < file_size) {
+						/* 
+							if the file size leftover is bigger than buffer (1024),
+							send back full buffer
+							otherwise send remainder
+						*/
+						int b  = (file_size - sent >= 1024) ? 1024 : file_size - sent;
+					    	send(data_socket, file_data + sent, b, 0);
+					    	sent += b;
+					}
+
+					/* close directory and file and socket, free up allocated space */
+					free(file_data);
+					fclose(file);
+					close(data_socket);
+				} 
+
+				/* print out  data retrieval response */
+				bzero(receiver, sizeof(receiver));
+				recv(network_socket, receiver, sizeof(receiver), 0);
+				printf("%s\n", receiver);
+			} if(strncmp(buffer, "RETR", 4)==0){
 			 	/* create a receiver buffer to store the incoming file name */
 				char receiver[1024];
 				strcpy(receiver, buffer);
@@ -416,14 +470,16 @@ int main(){
 				}
 
 				/* send the buffer contents through the network socket */
-				send(network_socket,buffer,sizeof(buffer),0);
+				send(network_socket, buffer, sizeof(buffer), 0);
 			
 				/* 
 					receive the size of the incoming data and 
 					the actual response data 
 				*/
 				int size;
+				
 				recv(data_socket, &size, sizeof(int), 0);
+				
 				char response[size];
 				memset(response, 0, sizeof(response)); // clear buffer just for error mitigation
 				recv(data_socket, response, sizeof(response), 0);
@@ -434,9 +490,10 @@ int main(){
 					close(data_socket);
 					continue;
 				} else {
-					char str[] = "150 File status okay; about to open data connection.\n";
+					char str[] = "150 File status okay; about to open. data connection.\n";
 					/*
-						printing out just the response ends up printing some random buffer values as well. not sure why so I print out just the string
+						printing out just the response ends up printing some random buffer values as well. 
+						not sure why so I print out just the string
 					*/
 					if(strncmp(str, response, strlen(str)) == 0){
 						printf("%s\r\n", str);
@@ -460,7 +517,7 @@ int main(){
 				sprintf(temp, "rand%d.tmp", rnd);
 
 				/* open a temo file for writing in binary mode */
-				FILE* file = fopen(temp, "wb");
+				FILE *file = fopen(temp, "wb");
 
 				int b;
 				
@@ -487,7 +544,7 @@ int main(){
 				memset(response, 0, sizeof(response));
 				memset(receiver, 0, sizeof(receiver));
 				recv(network_socket, receiver, sizeof(receiver), 0);
-				printf("%s \n", receiver);
+				printf("%s \r\n", receiver);
 			}
 			if (strncmp(buffer, "LIST", 4) == 0){
 			
@@ -499,7 +556,7 @@ int main(){
 				send(network_socket, buffer, sizeof(buffer), 0);
 				
 				recv(data_socket, receiver, sizeof(receiver), 0);
-				printf("%s\n", receiver);
+				printf("%s\r\n", receiver);
 
 				/*
 					attempt to receive the size of the incoming data.
@@ -509,7 +566,7 @@ int main(){
 				
 				/* attempt to receive the directory content based on the incoming size. */
 				recv(data_socket, directory_content, size, 0);
-				printf("%s\n", directory_content);
+				printf("%s\r\n", directory_content);
 				
 				/*
 					reset receiver to save memory
@@ -517,25 +574,24 @@ int main(){
 				*/
 				memset(receiver, 0, sizeof(receiver));
 				recv(network_socket, receiver, sizeof(receiver), 0);
-				printf("%s\n", receiver);
+				printf("%s\r\n", receiver);
 			}
 			
 		} else {
-            send(network_socket, buffer, strlen(buffer), 0);
-            bzero(buffer, sizeof(buffer));
+		    send(network_socket, buffer, strlen(buffer), 0);
+		    bzero(buffer, sizeof(buffer));
 
-            int message = recv(network_socket, buffer, sizeof(buffer), 0);
+		    int message = recv(network_socket, buffer, sizeof(buffer), 0);
 
-            if (message <= 0) {
-                printf("Server has shutdown\n");
-                close(network_socket);
-                return 0;
-            }
+		    if (message <= 0) {
+		        printf("Server has shutdown...\r\n");
+		        close(network_socket);
+		        return 0;
+		    }
 
-            buffer[message] = '\0';
-            printf("%s\n", buffer);
-        }
+		    buffer[message] = '\0';
+		    printf("%s \r\n", buffer);
+		}
     }
     return 0;
 }
-
