@@ -1,7 +1,6 @@
 #include "../code/clients.h"
 #include "../code/users.h"
 
-
 #include <stdio.h>
 #include <string.h>
 #include <sys/socket.h>
@@ -13,28 +12,29 @@
 #include <sys/select.h>
 #include <signal.h>
 #include <dirent.h>
+#include <time.h>
 
 long int findFileSize(const char *fileName) {
-    FILE *file = fopen(fileName, "rb"); // Open the file in binary mode
+    FILE *file = fopen(fileName, "rb"); 
     if (file == NULL) {
         printf("Could not open file %s\n", fileName);
         return -1;
     }
     
-    fseek(file, 0, SEEK_END); // Move the file pointer to the end of the file
-    long int size = ftell(file); // Get the current position of the file pointer (file size)
-    fclose(file); // Close the file
+    fseek(file, 0, SEEK_END); 
+    long int size = ftell(file);
+    fclose(file); 
     
     return size;
 }
 
-
-int handle_quit_cmd(int client_fd){
+int handle_quit_command(int client_fd){
     const char *quit_msg = "221 Service closing control connection.\n";
 
     send(client_fd, quit_msg, strlen(quit_msg), 0);
 
     removeClient(client_fd);
+    
     client_num--;
 
     close(client_fd);
@@ -269,6 +269,7 @@ int handle_cwd_command(char *buffer, int client_fd){
 		char response[1024];
 		snprintf(response, 1024, "257 %s", substring);
 		send(client_fd, response, strlen(response), 0);	
+		printf("\nClient working directory changed \n");
 		return 1;
 		
 	}
@@ -311,6 +312,7 @@ int handle_cwd_command(char *buffer, int client_fd){
 	char response[1024];
 	snprintf(response, 1024, "257 %s", substring);
 	send(client_fd, response, strlen(response), 0);	
+	printf("\nClient working directory changed \n");
 	return 1;
 }
 
@@ -321,7 +323,7 @@ int handle_list_command(char* buffer, int client_fd){
 
 	/* get data socket and send successful response */
 	int data_sock = client->data_socket;
-	send(data_sock, "150 File status okay; about to open data connection.\n", strlen("150 File status okay; about to open data connection.\n"), 0);
+	send(data_sock, "150 File status okay; about to open. data connection.\n", strlen("150 File status okay; about to open. data connection.\n"), 0);
 	
 	/* get current directroy */
 	DIR* directory;
@@ -357,6 +359,8 @@ int handle_list_command(char* buffer, int client_fd){
 			strcat(directoryContent, "\n[Directory empty]\n");
 		}
 		
+		printf("Listing directory\n");
+		
 		/* send reponse back to server */
 		send(data_sock, &size_list, sizeof(int), 0);
 		send(data_sock, directoryContent, size_list, 0);
@@ -365,14 +369,17 @@ int handle_list_command(char* buffer, int client_fd){
 	else{
 		/* error checking */
 		send(client_fd, "550 No such file or directory.", strlen("550 No such file or directory."), 0);
+		
 		return -1;
 	}
 	/* send confirmation of transfer */
+	printf("226 Transfer completed.\n\n");
 	send(client_fd, "226 Transfer completed.", strlen("226 Transfer completed."), 0);
 	return 1;
 }
 
-int handle_retr_cmd(char* buffer, int client_fd){
+int handle_retr_command(char* buffer, int client_fd){
+	/* get client */
 	Client *client = getClient(client_fd);
 
 	char receiver[1024];
@@ -414,9 +421,9 @@ int handle_retr_cmd(char* buffer, int client_fd){
 		return -1;
 	}
 	/* if it does exist send repsponse back */
-	int size = strlen("150 File status okay; about to open data connection.\n");
+	int size = strlen("150 File status okay; about to open. data connection.\n");
 	send(data_socket, &size, sizeof(int), 0);
-	send(data_socket, "150 File status okay; about to open data connection.\n", strlen( "150 File status okay; about to open data connection.\n"), 0);
+	send(data_socket, "150 File status okay; about to open. data connection.\n", strlen( "150 File status okay; about to open. data connection.\n"), 0);
 
 	/* send file back to client */
 	if(file_size!=-1){
@@ -449,7 +456,77 @@ int handle_retr_cmd(char* buffer, int client_fd){
 
 		close(data_socket);	
 	}
+	printf("226 Transfer completed.\n\n");
 	return 1;
 }
 
 
+/* reverse RETR */
+int handle_stor_command(char* buffer, int client_fd){
+	/* get client */
+	Client *client = getClient(client_fd);
+	
+	char receiver[1024];
+	strcpy(receiver, buffer);
+	char* filename = strchr(receiver, ' ');
+	if (filename != NULL) {
+	 	/* 
+	 		extract the file name from the receiver buffer 
+	 		not sure why just using buffer does not work 
+	 		
+	 	*/
+		filename = strtok(filename + 1, " ");
+	}
+
+	int connection_at = client -> data_socket;
+	
+	/* if file name is missing, send back bad response */
+	if (filename == NULL){
+		send(connection_at, "550 No such file or directory.\n", strlen("550 No such file or directory.\n"), 0);
+		close(connection_at);
+		return -1;
+	}
+	send(connection_at, "150 File status okay; about to open. data connection.\n", strlen("150 File status okay; about to open. data connection.\n"), 0);
+	
+	/* data buffer for storing incoming packets */
+	char data_buffer[1024];
+	
+	char temp[1024];
+	int randn = rand();
+	/* create temp file as per assignment instructions */
+	sprintf(temp, "rand%d.tmp",randn);
+	
+	char temp_dir[4096];
+		
+	/* go to client dir where the file will be stored */
+	getcwd(temp_dir, sizeof(temp_dir));
+	chdir(client->curr_dir);
+
+	/* open file for binary writing */
+	FILE* file = fopen(temp, "wb");
+	if (file == NULL) {
+		send(connection_at, "550 Cannot create file.\n", strlen("550 Cannot create file.\n"), 0);	
+		fclose(file);
+		return -1;
+	}
+	
+	/* receive file in byte sized chunks */
+	int b;
+	while ((b = recv(connection_at, data_buffer, sizeof(data_buffer), 0)) > 0) {
+		if (b < 1024) {
+		    	if (b != 0){
+		    		fwrite(data_buffer, 1, b, file);
+		    	} 
+			break;
+	    	}
+	    	fwrite(data_buffer, 1, b, file);  
+	}
+
+	/* close file and socket, rename it and change directory to original directory */
+	fclose(file);
+	close(connection_at);
+	rename(temp, filename);
+	chdir(temp_dir);
+   	printf("226 Transfer completed.\n\n");
+	return 1;
+}
