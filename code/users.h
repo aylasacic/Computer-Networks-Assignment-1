@@ -40,7 +40,7 @@ int readUsers() {
 
         int dir_result = mkdir(client_directory, 0755);
         if(dir_result < 0){
-            printf("Directory already exists!\n");
+            //printf("Directory already exists!\n");
         }
         else{
             printf("Directory created!\n");
