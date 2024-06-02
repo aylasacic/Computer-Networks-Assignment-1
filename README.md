@@ -2,10 +2,10 @@
 
 How to run:
 
-1. Run make in this folder
-2. Open two terminals
-3. Go to server folder in one terminal and client folder in other
-4. Run ./server in server
-5. Run ./client in client
+1. Run ```bash make``` in this folder
+3. Open two terminals
+4. Go to server folder in one terminal and client folder in other
+5. Run ```bash ./server``` in server
+6. Run ```bash ./client``` in client
 
 :D
