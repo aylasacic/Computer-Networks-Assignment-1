@@ -47,14 +47,14 @@ int storeStateAt(){
 void addClients() {
     for (int i = 0; i < 100; i++) {
         strcpy(clients[i].username, "");
-		clients[i].login = 0;
+	clients[i].login = 0;
         clients[i].isAuthenticated = 0;
-		strcpy(clients[i].ip_addr, "");
-		strcpy(clients[i].curr_dir, "");
+	strcpy(clients[i].ip_addr, "");
+	strcpy(clients[i].curr_dir, "");
 		
         clients[i].client_fd = -1;
-		clients[i].ftp_port = -1;
-		clients[i].data_socket = -1;
+	clients[i].ftp_port = -1;
+	clients[i].data_socket = -1;
     }
 }
 
@@ -82,16 +82,14 @@ void removeClient(int client_fd) {
 int authenticateClient(int client_fd){
 	Client *client = getClient(client_fd);
 	
-    //set current directory
+    	//set current directory
 	char client_directory[1024];
 	getcwd(client_directory, sizeof(client_directory));
-    strcat(client_directory, "/");
-    strcat(client_directory, client->username);
+    	strcat(client_directory, "/");
+    	strcat(client_directory, client->username);
 	strcpy(client->curr_dir, client_directory);
 
-    //set auth status to 1
 	client->isAuthenticated = 1;
-	//set data sock id to -1
 	client->data_socket = -1;	
 	return 1;
 }
