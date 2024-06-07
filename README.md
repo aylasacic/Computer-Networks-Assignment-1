@@ -1,4 +1,4 @@
-# Computer-Networks-Assignment-1
+# Computer-Networks-Assignment-1: Project 1: File Transport Protocol
 
 How to run:
 
