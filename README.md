@@ -2,7 +2,7 @@
 
 How to run:
 
-1. Run ```bash make``` in this folder
+1. Run ```make``` in this folder
 3. Open two terminals
 4. Go to server folder in one terminal and client folder in other
 5. Run ```bash ./server``` in server
